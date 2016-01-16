@@ -10,6 +10,28 @@ import java.util.Hashtable;
 import java.util.Scanner;
 
 public class Controller {
+	private static ArrayList<String> sort(HashSet<String> words, String comp) {
+		ArrayList<SortHelper> sortedWords = new ArrayList<SortHelper>();
+		Integer current_score;
+		for(String w: words) {
+			current_score = 0;
+			current_score += w.length()-comp.length();
+			for(int i = 0; i < comp.length(); i++) {
+				if (!(comp.charAt(i)==w.charAt(i))) {
+					current_score += 1;
+				}
+			}
+			sortedWords.add(new SortHelper(current_score,w));
+		}
+		// Sort
+		CompareScore comparator = new CompareScore();
+		sortedWords.sort(comparator);
+		ArrayList<String> to_return = new ArrayList<String>();
+		for(SortHelper get_string: sortedWords) {
+			to_return.add(get_string.word);
+		}
+		return to_return;
+	}
 	public static void main(String [] args){
 		String word_file = null;
 		String keyboard_file = null;
@@ -56,7 +78,6 @@ public class Controller {
 		    	}
 		    }
 		    words_in.close();
-		    System.out.println(allWords.toString());
 		} catch (FileNotFoundException e) {
 			System.out.println("Word list file not found");
 			System.exit(1);
@@ -81,7 +102,6 @@ public class Controller {
 		    	keyboardHash.put(line.split("\\,")[0], neighbors);
 		    }
 		    keyboard_in.close();
-		    System.out.println(keyboardHash.toString());
 		} catch (FileNotFoundException e) {
 			System.out.println("Keyboard file not found");
 			System.exit(1);
@@ -91,10 +111,10 @@ public class Controller {
 		}
 		
 		// Now, we can examine the text file
+		Hashtable<String,HashSet<String>> corrections = new Hashtable<String,HashSet<String>>();
 		try {
 			BufferedReader text_in = new BufferedReader(new FileReader(text_file));
 		    String line = null;
-			Hashtable<String,HashSet<String>> corrections = new Hashtable<String,HashSet<String>>();
 			ArrayList<String> similar_words = new ArrayList<String>();
 		    while ((line = text_in.readLine()) != null) {
 		    	for (String w: line.split("\\ ")) {
@@ -140,7 +160,6 @@ public class Controller {
 		    	}
 		    }
 		    text_in.close();
-		    System.out.println(corrections.toString());
 		} catch (FileNotFoundException e) {
 			System.out.println("Text file not found");
 			System.exit(1);
@@ -149,9 +168,13 @@ public class Controller {
 			System.exit(1);
 		}
 		
+		Hashtable<String,ArrayList<String>> clean_corrections = new Hashtable<String,ArrayList<String>>();
 		// Rank the suggestions
-		
-		
+		for(String to_sort: corrections.keySet()) {
+			clean_corrections.put(to_sort, sort(corrections.get(to_sort),to_sort));
+		}
+	    System.out.println(clean_corrections.toString());
+
 		// Output results
 		
 	}
