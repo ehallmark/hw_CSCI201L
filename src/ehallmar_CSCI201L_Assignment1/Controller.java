@@ -1,10 +1,15 @@
 package ehallmar_CSCI201L_Assignment1;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Scanner;
@@ -27,8 +32,16 @@ public class Controller {
 		CompareScore comparator = new CompareScore();
 		sortedWords.sort(comparator);
 		ArrayList<String> to_return = new ArrayList<String>();
+		int last_score = 0;
+		int current = 0;
 		for(SortHelper get_string: sortedWords) {
-			to_return.add(get_string.word);
+			if (current < 10) {
+				to_return.add(get_string.word);
+				current++;
+			} else if (current==10 && get_string.score == last_score) {
+				to_return.add(get_string.word);
+			} else { break; }
+			last_score = get_string.score;
 		}
 		return to_return;
 	}
@@ -112,10 +125,10 @@ public class Controller {
 		
 		// Now, we can examine the text file
 		Hashtable<String,HashSet<String>> corrections = new Hashtable<String,HashSet<String>>();
+		ArrayList<String> ordered_errors = new ArrayList<String>();
 		try {
 			BufferedReader text_in = new BufferedReader(new FileReader(text_file));
 		    String line = null;
-			ArrayList<String> similar_words = new ArrayList<String>();
 		    while ((line = text_in.readLine()) != null) {
 		    	for (String w: line.split("\\ ")) {
 		    		w = w.trim().replaceAll("[^a-zA-Z\\s]", "").toLowerCase();
@@ -123,37 +136,55 @@ public class Controller {
 		    			// w is now a formatted word
 		    			if(!allWords.contains(w)) {
 		    				// Not a correct word
-		    				//	Find corrections and completions
+			    			ArrayList<String> similar_words = new ArrayList<String>();
+			    			Hashtable<String,HashSet<Integer>> already_tried = new Hashtable<String,HashSet<Integer>>();
+			    			String current;
+		    				ordered_errors.add(w);
 		    				similar_words.add(w);
-		    				corrections.put(w, new HashSet<String>());
-							// Pluck potential completed words out of prefix tree
-							similar_words.addAll(prefixWords.getPrefixWords(w));
-		    				String current;
+		    				//	Find corrections and completions
+		    				HashSet<String> word_corrections = new HashSet<String>();
+		    				corrections.put(w, word_corrections);
+		    				HashSet<String> already_visited = new HashSet<String>();
 		    				while(similar_words.isEmpty() == false) {
 		    					current = similar_words.get(0);
-		    					if(allWords.contains(current)) {
-		    						corrections.get(w).add(current);	
+		    					already_visited.add(current);
+		    					if(!already_tried.containsKey(current)) {
+		    						already_tried.put(current, new HashSet<Integer>());
 		    					}
 		    					similar_words.remove(0);
-								if(current.length()==w.length()) {
-			    					for(int i = 0; i < current.length(); i++) {
-		    							Character c = current.charAt(i);
-		    							if(w.charAt(i)==c.charValue() && prefixWords.isPrefix(current.substring(0,i))) {
-			    							for(String s: keyboardHash.get(c.toString())) {
-			    								String to_add;
-			    								if (current.length()==1) {
-					    							to_add = s;
-					    						} else {
-					    							to_add = current.substring(0,i)+s+current.substring(i+1);
-					    						}
-				    							// Pluck potential completed words out of prefix tree
-			    								similar_words.add(to_add);
-			    								similar_words.addAll(prefixWords.getPrefixWords(to_add));
-			    							}
-				    							
-		    							}
-	    							}
+		    					if(allWords.contains(current)) {
+		    						word_corrections.add(current);	
 		    					}
+    							// Pluck potential completed words out of prefix tree
+		    					word_corrections.addAll(prefixWords.getPrefixWords(current));
+		    					
+		    					int position = current.length();
+		    					HashSet<Integer> included_nums = already_tried.get(current);
+		    					for(int i = 0; i < current.length(); i++) {
+		    						if(current.charAt(i)==w.charAt(i) && !included_nums.contains(i)) {
+		    							position = i;
+		    							included_nums.add(i);
+		    							break;
+		    						}
+		    					}
+		    					if(position == current.length()) {
+		    						continue;
+		    					}
+    							Character c = current.charAt(position);
+		    					// position of first similar character to original string
+    							for(String s: keyboardHash.get(c.toString())) {
+    								String to_add;
+    								if(current.length()==1) {
+		    							to_add = s;
+		    						} else {
+		    							to_add = current.substring(0,position)+s+current.substring(position+1);
+		    						}
+    								if(!already_visited.contains(to_add) && prefixWords.isPrefix(to_add.substring(0,position+1))) {
+    									similar_words.add(to_add);
+    									already_visited.add(to_add);
+    								}
+    							}
+								similar_words.add(current);
 		    				} 
 		    			}
 		    		}
@@ -173,9 +204,26 @@ public class Controller {
 		for(String to_sort: corrections.keySet()) {
 			clean_corrections.put(to_sort, sort(corrections.get(to_sort),to_sort));
 		}
-	    System.out.println(clean_corrections.toString());
 
 		// Output results
-		
+    	try {
+    		String fname = new Date().getTime() + ".txt";
+        	File file = new File(fname);
+        	//boolean truth = file.createNewFile();
+        	//System.out.println(truth);
+        	Writer writer = new BufferedWriter(new FileWriter(file));
+    		for(String word: ordered_errors) {
+    			writer.write(word+" -");
+    			for(String correction: clean_corrections.get(word)) {
+    				writer.write(" "+correction);
+    			}
+    			writer.write("\n");
+    		}
+	    	writer.close();
+		} catch (IOException e) {
+			System.out.println("Error writing to file");
+			System.exit(1);
+		}
+	 
 	}
 }

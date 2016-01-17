@@ -52,7 +52,7 @@ public class PrefixTrie {
 	
 	// Check if a string is a valid prefix even if not a word
 	public boolean isPrefix(String s) {
-		if(s=="") {
+		if(s=="" || s==null) {
 			return true; // special case
 		}
 		s = s.replaceAll("[^a-zA-Z\\s]", "").toLowerCase();
