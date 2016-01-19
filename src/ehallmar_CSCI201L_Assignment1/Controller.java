@@ -15,6 +15,7 @@ import java.util.Hashtable;
 import java.util.Scanner;
 
 public class Controller {
+	// This method returns an ArrayList of words sorted by "score"
 	private static ArrayList<String> sort(HashSet<String> words, String comp) {
 		ArrayList<SortHelper> sortedWords = new ArrayList<SortHelper>();
 		Integer current_score;
