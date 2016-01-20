@@ -8,6 +8,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -208,7 +210,8 @@ public class Controller {
 
 		// Output results
     	try {
-    		String fname = new Date().getTime() + ".txt";
+    		Format dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+    		String fname = dateFormat.format(new Date()) + ".txt";
         	File file = new File(fname);
         	//boolean truth = file.createNewFile();
         	//System.out.println(truth);
